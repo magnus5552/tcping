@@ -29,7 +29,8 @@ def to_ms(time_in_seconds):
 
 
 class Ping:
-    def __init__(self, args, socket=lambda: s.socket(s.AF_INET, s.SOCK_STREAM)):
+    def __init__(self, args,
+                 socket_factory=lambda: s.socket(s.AF_INET, s.SOCK_STREAM)):
         self.results = []
         self.recieved_count = 0
         self.sent_count = 0
@@ -39,7 +40,7 @@ class Ping:
         self.TIMEOUT = args.timeout
         self.ADDRESS = args.address
         self.PORT = args.port
-        self.SOCKET = socket
+        self.SOCKET = socket_factory
 
     @property
     def ip(self):

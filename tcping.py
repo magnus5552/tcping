@@ -1,6 +1,6 @@
 import sys
 
-from src.parser import configure_parser
+from src.cmd_parser import configure_parser
 from src.ping import Ping
 
 

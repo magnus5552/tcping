@@ -1,7 +1,7 @@
 import argparse
 
 
-def configure_parser():
+def configure_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog='tcping',
         description='Утилита tcping')

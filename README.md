@@ -16,3 +16,15 @@ python tcping.py [-h] [-n COUNT] [-t] [-i INTERVAL] [-w TIMEOUT] address [port]
  | -t         | Отправлять запросы до остановки с помощью CTRL + C |
 | -i INTERVAL | Задержка между запросами                           |
 | -w TIMEOUT | Время ожидания одного запроса                      |
+
+### Покрытие тестами
+```shell
+Name                Stmts   Miss  Cover   Missing
+-------------------------------------------------
+src\__init__.py         3      0   100%
+src\cmd_parser.py      10      0   100%
+src\ping.py            71     10    86%   81-94
+-------------------------------------------------
+TOTAL                  84     10    88%
+
+```
