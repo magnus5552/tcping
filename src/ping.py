@@ -1,4 +1,4 @@
-import socket
+import socket as s
 import time
 from dataclasses import dataclass
 from statistics import mean
@@ -29,7 +29,7 @@ def to_ms(time_in_seconds):
 
 
 class Ping:
-    def __init__(self, args):
+    def __init__(self, args, socket=s.socket(s.AF_INET, s.SOCK_STREAM)):
         self.results = []
         self.recieved_count = 0
         self.sent_count = 0
@@ -39,6 +39,7 @@ class Ping:
         self.TIMEOUT = args.timeout
         self.ADDRESS = args.address
         self.PORT = args.port
+        self.SOCKET = socket
 
     @property
     def ip(self):
@@ -60,7 +61,7 @@ class Ping:
 
     def ping_once(self):
         result = PingResult(self.ip, False, False, 0)
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        with self.SOCKET as sock:
             sock.settimeout(self.TIMEOUT)
             try:
                 start_time = time.time()
