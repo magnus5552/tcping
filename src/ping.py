@@ -33,20 +33,20 @@ class Ping:
         self.results = []
         self.recieved_count = 0
         self.sent_count = 0
-        self.count = args.count
+        self.COUNT = args.count
         self.is_infinite = args.is_infinite
-        self.interval = args.interval
-        self.timeout = args.timeout
-        self.address = args.address
-        self.port = args.port
+        self.INTERVAL = args.interval
+        self.TIMEOUT = args.timeout
+        self.ADDRESS = args.address
+        self.PORT = args.port
 
     @property
     def ip(self):
-        return f'{self.address}:{self.port}'
+        return f'{self.ADDRESS}:{self.PORT}'
 
     def ping(self):
         print(f'Проверка TCP соединения с {self.ip}')
-        while self.is_infinite or self.sent_count < self.count:
+        while self.is_infinite or self.sent_count < self.COUNT:
             self.sent_count += 1
             ping_result = self.ping_once()
 
@@ -56,15 +56,15 @@ class Ping:
             self.results.append(ping_result)
             print_result(ping_result)
 
-            time.sleep(self.interval)
+            time.sleep(self.INTERVAL)
 
     def ping_once(self):
         result = PingResult(self.ip, False, False, 0)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.settimeout(self.timeout)
+            sock.settimeout(self.TIMEOUT)
             try:
                 start_time = time.time()
-                sock.connect((self.address, self.port))
+                sock.connect((self.ADDRESS, self.PORT))
                 result.is_success = True
             except TimeoutError:
                 result.is_success = False

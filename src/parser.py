@@ -4,7 +4,7 @@ import argparse
 def configure_parser():
     parser = argparse.ArgumentParser(
         prog='tcping',
-        description='утилита ping')
+        description='Утилита tcping')
 
     parser.add_argument('-n', default=4, type=int, dest='count',
                         help='Число отправляемых запросов проверки связи.')

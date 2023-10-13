@@ -1,9 +1,15 @@
-from parser import configure_parser
-from ping import Ping
+import sys
+
+from src.parser import configure_parser
+from src.ping import Ping
 
 
 def main():
     parser = configure_parser()
+    if len(sys.argv) == 1:
+        parser.print_help()
+        return
+
     args = parser.parse_args()
     ping = Ping(args)
     try:
