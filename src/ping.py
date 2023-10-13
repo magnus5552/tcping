@@ -29,7 +29,7 @@ def to_ms(time_in_seconds):
 
 
 class Ping:
-    def __init__(self, args, socket=s.socket(s.AF_INET, s.SOCK_STREAM)):
+    def __init__(self, args, socket=lambda: s.socket(s.AF_INET, s.SOCK_STREAM)):
         self.results = []
         self.recieved_count = 0
         self.sent_count = 0
@@ -61,7 +61,7 @@ class Ping:
 
     def ping_once(self):
         result = PingResult(self.ip, False, False, 0)
-        with self.SOCKET as sock:
+        with self.SOCKET() as sock:
             sock.settimeout(self.TIMEOUT)
             try:
                 start_time = time.time()
