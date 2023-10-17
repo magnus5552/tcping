@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 
 def configure_parser() -> argparse.ArgumentParser:
@@ -15,7 +16,24 @@ def configure_parser() -> argparse.ArgumentParser:
                         help='Задержка между запросами')
     parser.add_argument('-w', default=2.0, type=float, dest='timeout',
                         help='Время ожидания одного запроса')
+    parser.add_argument('-4', action='store_true', dest='is_force_ipv4',
+                        help='Задает принудительное использование протокола '
+                             'IPv4')
+    parser.add_argument('-6', action='store_true', dest='is_force_ipv6',
+                        help='Задает принудительное использование протокола '
+                             'IPv6')
     parser.add_argument('address', help='Конечный узел')
     parser.add_argument('port', nargs='?', default=80, type=int,
                         help='Порт')
     return parser
+
+
+def parse_args(custom_args=None):
+    parser = configure_parser()
+
+    args = parser.parse_args(custom_args) if custom_args is not None \
+        else parser.parse_args()
+    if args.is_force_ipv4 and args.is_force_ipv6:
+        raise ValueError('-4 and -6 parameters cannot be used together')
+
+    return args

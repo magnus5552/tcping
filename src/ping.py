@@ -1,7 +1,8 @@
-import socket as s
 import time
 from dataclasses import dataclass
 from statistics import mean
+
+from .sockets import PingSocket
 
 
 @dataclass
@@ -29,22 +30,22 @@ def to_ms(time_in_seconds):
 
 
 class Ping:
-    def __init__(self, args,
-                 socket_factory=lambda: s.socket(s.AF_INET, s.SOCK_STREAM)):
+    def __init__(self,
+                 socket: PingSocket,
+                 interval=1.0,
+                 count=4,
+                 is_infinite=False):
         self.results = []
         self.recieved_count = 0
         self.sent_count = 0
-        self.COUNT = args.count
-        self.is_infinite = args.is_infinite
-        self.INTERVAL = args.interval
-        self.TIMEOUT = args.timeout
-        self.ADDRESS = args.address
-        self.PORT = args.port
-        self.SOCKET = socket_factory
+        self.is_infinite = is_infinite
+        self.COUNT = count
+        self.INTERVAL = interval
+        self.SOCKET = socket
 
     @property
     def ip(self):
-        return f'{self.ADDRESS}:{self.PORT}'
+        return f'{self.SOCKET.HOST}:{self.SOCKET.PORT}'
 
     def ping(self):
         print(f'Проверка TCP соединения с {self.ip}')
@@ -62,11 +63,10 @@ class Ping:
 
     def ping_once(self):
         result = PingResult(self.ip, False, False, 0)
-        with self.SOCKET() as sock:
-            sock.settimeout(self.TIMEOUT)
+        with self.SOCKET as sock:
             try:
                 start_time = time.time()
-                sock.connect((self.ADDRESS, self.PORT))
+                sock.connect()
                 result.is_success = True
             except TimeoutError:
                 result.is_success = False
@@ -80,16 +80,20 @@ class Ping:
     def print_statistic(self):
         lost = self.sent_count - self.recieved_count
         loss = lost / self.sent_count * 100 if self.sent_count != 0 else 0.0
-        elapsed_stats = [r.elapsed for r in self.results]
-        min_elapsed = min(elapsed_stats)
-        max_elapsed = max(elapsed_stats)
-        mean_elapsed = round(mean(elapsed_stats), 2)
-
         print(f'Статистика TCP Ping для {self.ip}:')
         print(
             f'    Пакетов отправлено: {self.sent_count}, '
             f'получено: {self.recieved_count}, '
             f'потеряно: {lost} ({loss}% потерь)')
+
+        if all(not r.is_success for r in self.results):
+            return
+
+        elapsed_stats = [r.elapsed for r in self.results if r.is_success]
+        min_elapsed = min(elapsed_stats)
+        max_elapsed = max(elapsed_stats)
+        mean_elapsed = round(mean(elapsed_stats), 2)
+
         print(f'Приблизительное время приема-передачи:')
         print(
             f'    Минимальное: {min_elapsed}ms, максимальное: {max_elapsed}ms,'
