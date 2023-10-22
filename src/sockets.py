@@ -1,6 +1,8 @@
 import socket as s
 from abc import abstractmethod
 
+from src import PingStatistic
+
 
 class PingSocket:
 
@@ -11,6 +13,7 @@ class PingSocket:
         self.protocol_desc = protocol_desc
         self.TIMEOUT = timeout
         self.socket: s.socket = None
+        self.statistic = PingStatistic(self.ip)
 
     def __enter__(self):
         self.socket = s.socket(self.PROTOCOL, s.SOCK_STREAM)
@@ -24,6 +27,10 @@ class PingSocket:
     @abstractmethod
     def connect(self):
         pass
+
+    @property
+    def ip(self):
+        return f'{self.HOST}:{self.PORT}'
 
 
 class SocketIPV4(PingSocket):
@@ -47,11 +54,24 @@ class SocketIPV6(PingSocket):
                              self.flowinfo, self.scope_id))
 
 
-def get_socket(args):
-    ip_address_data = s.getaddrinfo(args.address, args.port)
-    if args.is_force_ipv4:
+def get_sockets(args):
+    timeout = args.timeout
+    ips = args.ips
+    is_force_ipv4 = args.is_force_ipv4
+    is_force_ipv6 = args.is_force_ipv6
+
+    sockets = []
+    for address, port in ips:
+        sockets.append(get_socket(address, port, timeout,
+                                  is_force_ipv4, is_force_ipv6))
+    return sockets
+
+
+def get_socket(address, port, timeout, is_force_ipv4, is_force_ipv6):
+    ip_address_data = s.getaddrinfo(address, port)
+    if is_force_ipv4:
         ip_address_data = filter(lambda x: x[0] == s.AF_INET, ip_address_data)
-    elif args.is_force_ipv6:
+    elif is_force_ipv6:
         ip_address_data = filter(lambda x: x[0] == s.AF_INET6, ip_address_data)
 
     ip_address_data = list(ip_address_data)
@@ -61,8 +81,8 @@ def get_socket(args):
 
     socket = None
     if ip_address[0] == s.AF_INET:
-        socket = SocketIPV4(*ip_address[4], args.timeout)
+        socket = SocketIPV4(*ip_address[4], timeout)
     elif ip_address[0] == s.AF_INET6:
-        socket = SocketIPV6(*ip_address[4], args.timeout)
+        socket = SocketIPV6(*ip_address[4], timeout)
 
     return socket

@@ -1,100 +1,58 @@
 import time
-from dataclasses import dataclass
-from statistics import mean
 
+from .ping_statistic import PingResult, print_result, PingStatistic
 from .sockets import PingSocket
-
-
-@dataclass
-class PingResult:
-    ip: str
-    is_success: bool
-    is_timeout: bool
-    elapsed: float
-
-
-def print_result(result: PingResult):
-    if result.is_success:
-        print(f'Подключение к {result.ip}: {result.elapsed}ms')
-        return
-
-    if result.is_timeout:
-        print(f'Превышено время ожидания')
-        return
-
-    print('Возникла ошибка при подключении')
 
 
 def to_ms(time_in_seconds):
     return round(time_in_seconds * 1000, 2)
 
 
+def ping_once(socket):
+    result = PingResult(socket.ip, False, False, 0)
+    with socket as sock:
+        try:
+            start_time = time.time()
+            sock.connect()
+            result.is_success = True
+        except TimeoutError:
+            result.is_success = False
+            result.is_timeout = True
+        except OSError:
+            result.is_success = False
+        result.elapsed = to_ms(time.time() - start_time)
+
+    return result
+
+
 class Ping:
     def __init__(self,
-                 socket: PingSocket,
+                 sockets: list[PingSocket],
                  interval=1.0,
                  count=4,
                  is_infinite=False):
-        self.results = []
         self.recieved_count = 0
         self.sent_count = 0
         self.is_infinite = is_infinite
         self.COUNT = count
         self.INTERVAL = interval
-        self.SOCKET = socket
-
-    @property
-    def ip(self):
-        return f'{self.SOCKET.HOST}:{self.SOCKET.PORT}'
+        self.SOCKETS = sockets
 
     def ping(self):
-        print(f'Проверка TCP соединения с {self.ip}')
+        ips = [s.ip for s in self.SOCKETS]
+        print(f'Проверка TCP соединения с {" ".join(ips)}')
         while self.is_infinite or self.sent_count < self.COUNT:
             self.sent_count += 1
-            ping_result = self.ping_once()
+            for socket in self.SOCKETS:
+                ping_result = ping_once(socket)
 
-            if ping_result.is_success:
-                self.recieved_count += 1
-
-            self.results.append(ping_result)
-            print_result(ping_result)
-
+                socket.statistic.add_result(ping_result)
+                print_result(ping_result)
+            print()
             time.sleep(self.INTERVAL)
-
-    def ping_once(self):
-        result = PingResult(self.ip, False, False, 0)
-        with self.SOCKET as sock:
-            try:
-                start_time = time.time()
-                sock.connect()
-                result.is_success = True
-            except TimeoutError:
-                result.is_success = False
-                result.is_timeout = True
-            except OSError:
-                result.is_success = False
-            result.elapsed = to_ms(time.time() - start_time)
-
-        return result
+        print()
 
     def print_statistic(self):
-        lost = self.sent_count - self.recieved_count
-        loss = lost / self.sent_count * 100 if self.sent_count != 0 else 0.0
-        print(f'Статистика TCP Ping для {self.ip}:')
-        print(
-            f'    Пакетов отправлено: {self.sent_count}, '
-            f'получено: {self.recieved_count}, '
-            f'потеряно: {lost} ({loss}% потерь)')
-
-        if all(not r.is_success for r in self.results):
-            return
-
-        elapsed_stats = [r.elapsed for r in self.results if r.is_success]
-        min_elapsed = min(elapsed_stats)
-        max_elapsed = max(elapsed_stats)
-        mean_elapsed = round(mean(elapsed_stats), 2)
-
-        print(f'Приблизительное время приема-передачи:')
-        print(
-            f'    Минимальное: {min_elapsed}ms, максимальное: {max_elapsed}ms,'
-            f' среднее: {mean_elapsed}ms')
+        for socket in self.SOCKETS:
+            socket.statistic.print_statistic()
+            print()

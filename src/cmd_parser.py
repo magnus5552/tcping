@@ -22,10 +22,14 @@ def configure_parser() -> argparse.ArgumentParser:
     parser.add_argument('-6', action='store_true', dest='is_force_ipv6',
                         help='Задает принудительное использование протокола '
                              'IPv6')
-    parser.add_argument('address', help='Конечный узел')
-    parser.add_argument('port', nargs='?', default=80, type=int,
-                        help='Порт')
+    parser.add_argument('ips', nargs='+', default=('localhost', 80), type=ip,
+                        help='IP-адрес (через запятую)')
     return parser
+
+
+def ip(arg):
+    args = arg.split(',')
+    return args[0], int(args[1])
 
 
 def parse_args(custom_args=None):
