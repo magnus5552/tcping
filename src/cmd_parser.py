@@ -23,7 +23,7 @@ def configure_parser() -> argparse.ArgumentParser:
                         help='Задает принудительное использование протокола '
                              'IPv6')
     parser.add_argument('ips', nargs='+', default=('localhost', 80), type=ip,
-                        help='IP-адрес (через запятую)')
+                        help='IP-адрес (в формате: адрес,порт)')
     return parser
 
 
